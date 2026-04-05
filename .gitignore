@@ -1,0 +1,10 @@
+dataset/
+train_log/
+checkpoints/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.idea/
+*.png
+*.pdf
