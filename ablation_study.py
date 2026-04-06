@@ -1,7 +1,7 @@
 """
-消融实验脚本：基于 GRAVITAS (Full) v3 分别移除各组件
+消融实验脚本：基于 GCLP (Full) v3 分别移除各组件
 
-  (1) GRAVITAS (Full)   — GGLP + GSNR-ASCR 掩码 + LLM Anchor（完整配置）
+  (1) GCLP (Full)   — GGLP + GSNR-ASCR 掩码 + LLM Anchor（完整配置）
   (2) w/o GGLP          — 移除梯度游走图构建，保留 GSNR-ASCR 掩码
   (3) w/o GDDM          — 移除 GSNR-ASCR 参数掩码，保留梯度游走图
 
@@ -637,7 +637,7 @@ def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
 
 ABLATION_CONFIGS = [
     {
-        'name':          'GRAVITAS (Full)',
+        'name':          'GCLP (Full)',
         'use_gwg':       True,
         'use_gsnr_ascr': True,
         # 全模型使用默认超参数，不需要覆盖

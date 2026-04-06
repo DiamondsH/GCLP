@@ -263,7 +263,7 @@ emb_naive, info_naive = load_naive_mlp_and_extract(
 emb_wo,   info_wo   = load_model_and_extract(
     f'checkpoints/ablation/{dataset_name}_w_o_GGLP_seed{seed}_best.pt', data, device)
 emb_full, info_full = load_model_and_extract(
-    f'checkpoints/ablation/{dataset_name}_GRAVITAS_Full_seed{seed}_best.pt', data, device)
+    f'checkpoints/ablation/{dataset_name}_GCLP_Full_seed{seed}_best.pt', data, device)
 print("=" * 70)
 
 
@@ -429,7 +429,7 @@ df_wo, cache_wo = search_single_model(
     os.path.join(out_root, 'wo_gglp'))
 
 df_full, cache_full = search_single_model(
-    emb_full, 'Full Model (GRAVITAS)', 'Full',
+    emb_full, 'Full Model (GCLP)', 'Full',
     os.path.join(out_root, 'full_model'))
 
 

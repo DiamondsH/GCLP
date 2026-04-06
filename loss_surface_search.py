@@ -2,13 +2,13 @@
 loss_surface_hp_search.py
 
 对 loss 曲面可视化的计算超参进行网格搜索，寻找最优参数组合：
-  - 最大化 GRAVITAS (Full) 与 w/o GDDM 的曲面形状差异（归一化 L2）
+  - 最大化 GCLP (Full) 与 w/o GDDM 的曲面形状差异（归一化 L2）
   - 同时最小化 Full 模型曲面的粗糙度（Total Variation）
   目标函数: score = diff(Full, w/o GDDM) − λ × roughness(Full)
 
 前置条件：
   先运行 ablation_study_v3_plot_loss.py（需加 --ckpt_dir 参数）生成两个 checkpoint 文件：
-    {ckpt_dir}/{dataset}_GRAVITAS_Full_ckpt.pt
+    {ckpt_dir}/{dataset}_GCLP_Full_ckpt.pt
     {ckpt_dir}/{dataset}_wo_GDDM_ckpt.pt
 
 用法：
@@ -104,7 +104,7 @@ logger.info(f'总组合数: {total_combos}')
 
 # ─── Checkpoint 加载 ───────────────────────────────────────────────────────────
 _CKPT_NAMES = {
-    'GRAVITAS (Full)': 'GRAVITAS_Full',
+    'GCLP (Full)': 'GCLP_Full',
     'w/o GDDM':        'wo_GDDM',
 }
 
@@ -123,7 +123,7 @@ def load_ckpt(config_name: str) -> dict:
     return ckpt
 
 logger.info('\n加载 Checkpoint...')
-ckpt_full = load_ckpt('GRAVITAS (Full)')
+ckpt_full = load_ckpt('GCLP (Full)')
 ckpt_gddm = load_ckpt('w/o GDDM')
 
 # ─── 数据加载（用于 forward pass）─────────────────────────────────────────────
@@ -497,7 +497,7 @@ def save_results(df: pd.DataFrame) -> pd.DataFrame:
 
 def _plot_surface_pair(ax1, ax2, Z_full, Z_gddm, ax_vals, epoch):
     A, B = np.meshgrid(ax_vals, ax_vals)
-    for ax, Z, label in [(ax1, Z_full, 'GRAVITAS (Full)'),
+    for ax, Z, label in [(ax1, Z_full, 'GCLP (Full)'),
                           (ax2, Z_gddm, 'w/o GDDM')]:
         ax.set_facecolor('none')
         ax.plot_surface(A, B, Z, cmap='coolwarm', edgecolor='none')

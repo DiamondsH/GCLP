@@ -132,7 +132,7 @@ def load_model_and_extract(ckpt_path, data, device):
 
 # ─── 加载两个模型 ──────────────────────────────────────────────────────────────
 ckpt_wo_gglp = f'checkpoints/ablation/pheme_w_o_GGLP_seed{seed}_best.pt'
-ckpt_full    = f'checkpoints/ablation/pheme_GRAVITAS_Full_seed{seed}_best.pt'
+ckpt_full    = f'checkpoints/ablation/pheme_GCLP_Full_seed{seed}_best.pt'
 
 print("=" * 60)
 print("Loading w/o GGLP model...")
