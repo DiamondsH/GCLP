@@ -1,7 +1,7 @@
 
 """
 FCN-LP + 梯度游走图（GWG）训练脚本（伪标签靶子集 + GSNR-ASCR 融合掩码 v3）
-  - 靶子集来自 pseudo_labels_output_deepseek.csv，按置信度 top-K 选取
+  - 靶子集来自 pseudo_labels_output_gpt4o.csv，按置信度 top-K 选取
   - 两次反向传播分别获取 g_sup 和 g_anc，用于 EMA 统计
   - GSNR-ASCR 融合 soft mask 作用于监督梯度（与原 GSNR 行为一致）
   - anchor 梯度仅用于计算 EMA 指标，不参与实际梯度更新
@@ -211,7 +211,7 @@ def build_target_set_from_pseudo(pseudo_csv_path, test_data_csv_path, n_train, K
 
 
 target_indices, target_pseudo_labels = build_target_set_from_pseudo(
-    pseudo_csv_path=f'dataset/{dataset_name}/pseudo_labels_output_deepseek.csv',
+    pseudo_csv_path=f'dataset/{dataset_name}/pseudo_labels_output_gpt4o.csv',
     test_data_csv_path=f'dataset/{dataset_name}/dataforGCN_test.csv',
     n_train=n_train,
     K=args.target_k

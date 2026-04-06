@@ -8,12 +8,9 @@ pip install -r requirements.txt
 
 ## Dataset
 
-Download the dataset from Baidu Netdisk and extract it to the project root directory:
+Download the dataset and extract it to the project root directory as `dataset/`.
 
-- Link: https://pan.baidu.com/s/1dopAnGEupZU0NqyI1lbi1A?pwd=3h6a
-- Password: `3h6a`
-
-After extraction, the directory structure should be:
+The directory structure should be:
 
 ```
 GCLP/
@@ -23,7 +20,7 @@ GCLP/
 │   │   ├── dataforGCN_test.csv
 │   │   ├── TweetEmbeds.pt
 │   │   ├── TweetGraph.pt
-│   │   └── pseudo_labels_output_deepseek.csv
+│   │   └── pseudo_labels_output_gpt4o.csv
 │   ├── twitter/   (same structure)
 │   └── weibo/     (same structure)
 ├── train.py

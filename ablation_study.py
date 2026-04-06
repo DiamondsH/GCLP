@@ -192,7 +192,7 @@ def build_target_set_from_pseudo(pseudo_csv_path, test_data_csv_path, n_train, K
     return target_indices, torch.tensor(target_labels, dtype=torch.float)
 
 target_indices, target_pseudo_labels = build_target_set_from_pseudo(
-    pseudo_csv_path=f'dataset/{dataset_name}/pseudo_labels_output_deepseek.csv',
+    pseudo_csv_path=f'dataset/{dataset_name}/pseudo_labels_output_gpt4o.csv',
     test_data_csv_path=f'dataset/{dataset_name}/dataforGCN_test.csv',
     n_train=n_train,
     K=args.target_k
