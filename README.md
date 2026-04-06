@@ -75,7 +75,7 @@ python plot_topk.py --log_dir train_log
 | `model.py` | FCN_LP model architecture |
 | `LPN_layer.py` | Label Propagation layer (LPAconv) |
 | `mmd.py` | MMD loss for domain adaptation |
-| `train.py` | Main training script with GWG + GSNR-ASCR |
+| `train.py` | Main training script with GWG + GSNR-ACR |
 | `ablation_study.py` | Ablation study (Full / w/o GGLP / w/o GDDM) |
 | `hparam_search.py` | Parallel hyperparameter grid search |
 | `umap_visualization.py` | UMAP embedding visualization |

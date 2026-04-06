@@ -1,9 +1,9 @@
 """
 消融实验脚本：基于 GCLP (Full) v3 分别移除各组件
 
-  (1) GCLP (Full)   — GGLP + GSNR-ASCR 掩码 + LLM Anchor（完整配置）
-  (2) w/o GGLP          — 移除梯度游走图构建，保留 GSNR-ASCR 掩码
-  (3) w/o GDDM          — 移除 GSNR-ASCR 参数掩码，保留梯度游走图
+  (1) GCLP (Full)   — GGLP + GSNR-ACR 掩码 + LLM Anchor（完整配置）
+  (2) w/o GGLP          — 移除梯度游走图构建，保留 GSNR-ACR 掩码
+  (3) w/o GDDM          — 移除 GSNR-ACR 参数掩码，保留梯度游走图
 
 用法:
   python ablation_study_v3.py --dataset pheme [--epochs 6000] [--runs 5]
@@ -45,7 +45,7 @@ parser.add_argument('--gwg_warmup',   type=int,   default=30)
 parser.add_argument('--gwg_M',        type=int,   default=3)
 parser.add_argument('--gwg_batch',    type=int,   default=64)
 parser.add_argument('--target_k',     type=int,   default=20)
-# GSNR-ASCR 融合掩码超参
+# GSNR-ACR 融合掩码超参
 parser.add_argument('--mask_warmup',  type=int,   default=300)
 parser.add_argument('--rho',          type=float, default=0.8)
 parser.add_argument('--alpha',        type=float, default=0.8)
@@ -202,10 +202,10 @@ logger.info(f'Target set: loaded {len(target_indices)} pseudo-label anchors')
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# GSNR-ASCR 融合掩码器（与 v3 训练脚本完全一致）
+# GSNR-ACR 融合掩码器（与 v3 训练脚本完全一致）
 # ═══════════════════════════════════════════════════════════════════════════════
 
-class GSNRASCRMasker:
+class GSNRACRMasker:
     def __init__(self, model, rho=0.95, warmup_epochs=300,
                  alpha=0.9, mask_percentile=1.0, beta=0.5):
         self.model = model
@@ -254,7 +254,7 @@ class GSNRASCRMasker:
                     p.grad = g_s.clone()
             return None, None
 
-        # Step 2: 计算 GSNR 和 ASCR
+        # Step 2: 计算 GSNR 和 ACR
         gsnr_log_map, ascr_map = {}, {}
         all_gsnr_log, all_ascr = [], []
 
@@ -441,7 +441,7 @@ def evaluate(output, labels):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 核心：单次训练函数（通过开关控制 GWG 和 GSNR-ASCR）
+# 核心：单次训练函数（通过开关控制 GWG 和 GSNR-ACR）
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
@@ -451,7 +451,7 @@ def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
     Args:
         config_name:   配置名称（用于日志）
         use_gwg:       是否启用梯度游走图 (GGLP)
-        use_gsnr_ascr: 是否启用 GSNR-ASCR 融合掩码 (GDDM)
+        use_gsnr_ascr: 是否启用 GSNR-ACR 融合掩码 (GDDM)
         run_seed:      本次运行的随机种子
         hp_override:   超参数覆盖字典（可选）
     Returns:
@@ -489,7 +489,7 @@ def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
 
     masker = None
     if use_gsnr_ascr:
-        masker = GSNRASCRMasker(
+        masker = GSNRACRMasker(
             model, rho=hp['rho'], warmup_epochs=hp['mask_warmup'],
             alpha=hp['alpha'], mask_percentile=hp['mask_percentile'],
             beta=hp['mask_beta']
@@ -539,7 +539,7 @@ def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
 
         if use_gsnr_ascr and masker is not None:
             # ════════════════════════════════════════════════════════════════
-            # 双次反向传播路径：g_sup + g_anc → GSNR-ASCR mask
+            # 双次反向传播路径：g_sup + g_anc → GSNR-ACR mask
             # ════════════════════════════════════════════════════════════════
 
             # ★ 第一次反向传播：监督梯度 g_sup
@@ -567,7 +567,7 @@ def train_single_run(config_name, use_gwg, use_gsnr_ascr, run_seed,
             loss_anc.backward()
             g_anc_dict = _collect_grads(model)
 
-            # ★ GSNR-ASCR 融合掩码：mask * g_sup 写入 p.grad
+            # ★ GSNR-ACR 融合掩码：mask * g_sup 写入 p.grad
             optimizer.zero_grad()
             masker.compute_and_apply(g_sup_dict, g_anc_dict, epoch)
 
@@ -657,7 +657,7 @@ ABLATION_CONFIGS = [
     {
         'name':          'w/o GDDM',
         'use_gwg':       True,
-        'use_gsnr_ascr': False,     # 移除 GSNR-ASCR 参数掩码
+        'use_gsnr_ascr': False,     # 移除 GSNR-ACR 参数掩码
         'hp_override': {
             'epochs':       500,     # 训练 500 epoch（默认 6000）
             'dropout':      0.5,     # dropout 设置为 0.5（默认 0.85）
@@ -678,7 +678,7 @@ all_results = {}
 for cfg in ABLATION_CONFIGS:
     cname = cfg['name']
     logger.info(f'\n{"="*70}')
-    logger.info(f'Config: {cname}  (GWG={cfg["use_gwg"]}, GSNR-ASCR={cfg["use_gsnr_ascr"]})')
+    logger.info(f'Config: {cname}  (GWG={cfg["use_gwg"]}, GSNR-ACR={cfg["use_gsnr_ascr"]})')
     logger.info(f'{"="*70}')
 
     run_results = []

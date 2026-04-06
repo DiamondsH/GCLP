@@ -1,9 +1,9 @@
 
 """
-FCN-LP + 梯度游走图（GWG）训练脚本（伪标签靶子集 + GSNR-ASCR 融合掩码 v3）
+FCN-LP + 梯度游走图（GWG）训练脚本（伪标签靶子集 + GSNR-ACR 融合掩码 v3）
   - 靶子集来自 pseudo_labels_output_gpt4o.csv，按置信度 top-K 选取
   - 两次反向传播分别获取 g_sup 和 g_anc，用于 EMA 统计
-  - GSNR-ASCR 融合 soft mask 作用于监督梯度（与原 GSNR 行为一致）
+  - GSNR-ACR 融合 soft mask 作用于监督梯度（与原 GSNR 行为一致）
   - anchor 梯度仅用于计算 EMA 指标，不参与实际梯度更新
   - warmup 期不 mask，积累 EMA
 用法: python train.py --dataset pheme
@@ -48,13 +48,13 @@ parser.add_argument('--gwg_batch',    type=int,   default=64,
                     help='梯度计算 batch size')
 parser.add_argument('--target_k',     type=int,   default=20,
                     help='靶子集大小')
-# GSNR-ASCR 融合掩码超参
+# GSNR-ACR 融合掩码超参
 parser.add_argument('--mask_warmup',  type=int,   default=300,
                     help='掩码 warmup epoch 数（期间不 mask，仅积累 EMA）')
 parser.add_argument('--rho',          type=float, default=0.8,
                     help='EMA 衰减率')
 parser.add_argument('--alpha',        type=float, default=0.8,
-                    help='GSNR 与 ASCR 融合权重 (α*GSNR_norm + (1-α)*ASCR_norm)')
+                    help='GSNR 与 ACR 融合权重 (α*GSNR_norm + (1-α)*ACR_norm)')
 parser.add_argument('--mask_percentile', type=float, default=0.5,
                     help='soft mask 百分位阈值 q（Q 的第 q 百分位作为 τ）')
 parser.add_argument('--mask_beta',    type=float, default=0.5,
@@ -89,7 +89,7 @@ def setup_logger(log_file):
 
 _log_path = args.log_file if args.log_file else f'train_log/{args.dataset}_gwg_pseudo_gsnr_ascr_v3_test.log'
 logger = setup_logger(_log_path)
-logger.info(f'=== GWG-Pseudo GSNR-ASCR v3 | Dataset: {args.dataset} | Device: {device} ===')
+logger.info(f'=== GWG-Pseudo GSNR-ACR v3 | Dataset: {args.dataset} | Device: {device} ===')
 
 # ─── 数据加载 ──────────────────────────────────────────────────────────────────
 dataset_name = args.dataset
@@ -231,11 +231,11 @@ optimizer   = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=arg
 criterion   = nn.CrossEntropyLoss()
 mmd_loss_fn = MMDLoss(kernel_type='linear')
 
-# ─── GSNR-ASCR 融合掩码器 ─────────────────────────────────────────────────────
+# ─── GSNR-ACR 融合掩码器 ─────────────────────────────────────────────────────
 
-class GSNRASCRMasker:
+class GSNRACRMasker:
     """
-    对每个参数元素维护 4 个 EMA 统计量，融合 GSNR 和 ASCR 生成 soft mask。
+    对每个参数元素维护 4 个 EMA 统计量，融合 GSNR 和 ACR 生成 soft mask。
     mask 作用于监督梯度（与原 GSNR 行为一致），anchor 梯度仅用于 EMA 统计。
     """
 
@@ -293,7 +293,7 @@ class GSNRASCRMasker:
                     p.grad = g_s.clone()
             return None, None
 
-        # ── Step 2: 计算 GSNR 和 ASCR ────────────────────────────────────────
+        # ── Step 2: 计算 GSNR 和 ACR ────────────────────────────────────────
         gsnr_log_map = {}
         ascr_map = {}
         all_gsnr_log = []
@@ -369,7 +369,7 @@ class GSNRASCRMasker:
         return tau, masked_ratio
 
 
-masker = GSNRASCRMasker(
+masker = GSNRACRMasker(
     model, rho=args.rho, warmup_epochs=args.mask_warmup,
     alpha=args.alpha, mask_percentile=args.mask_percentile, beta=args.mask_beta
 )
@@ -594,14 +594,14 @@ for epoch in range(args.epochs):
     g_anc_dict = _collect_grads(model)
 
     # ══════════════════════════════════════════════════════════════════════════
-    # ★ GSNR-ASCR 融合掩码：mask * g_sup 写入 p.grad
+    # ★ GSNR-ACR 融合掩码：mask * g_sup 写入 p.grad
     # ══════════════════════════════════════════════════════════════════════════
     optimizer.zero_grad()
     tau, masked_ratio = masker.compute_and_apply(g_sup_dict, g_anc_dict, epoch)
 
     if tau is not None and epoch % 50 == 0:
         logger.info(
-            f'Epoch {epoch}: GSNR-ASCR tau={tau:.4f}, '
+            f'Epoch {epoch}: GSNR-ACR tau={tau:.4f}, '
             f'masked={masked_ratio*100:.1f}%'
         )
 
